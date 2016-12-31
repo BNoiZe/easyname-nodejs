@@ -1,6 +1,7 @@
 var should = require('chai').should();
+var config = require('./config.json');
 var EasynameApi = require('../index');
-var api = new EasynameApi('30917', 'roman@schmerold.at', 'iZWIYTakfU0X', 'taWQC5%s0kus0n%szjazv06D', 'A610NJEqvOYyCFadjt7X3v7i');
+var api = new EasynameApi(config.apiId, config.apiMail, config.apiKey, config.apiAuthSalt, config.apiSignSalt);
 
 //api.listDomain();
 //api.getDomain(197790);
