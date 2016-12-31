@@ -3,8 +3,8 @@
  */
 
 // Private
-var vsprintf = require('sprintf-js').vsprintf;
-var crypto = require('crypto');
+const vsprintf = require('sprintf-js').vsprintf;
+const crypto = require('crypto');
 const https = require('https');
 const querystring = require('querystring');
 
@@ -29,6 +29,41 @@ function EasynameApi(id, mail, apiKey, apiAuthSalt, apiSignSalt) {
         authentication = new Buffer(authentication).toString('base64');
         return authentication;
     };
+
+    this.createBody = function(data = null) {
+        if (!data) {
+            data = [];
+        }
+        var timestamp = +new Date();
+
+        var body = {
+            data: data,
+            timestamp: timestamp,
+            signature: this.signRequest(data, timestamp)
+        }
+
+        return JSON.stringify(body);
+    }
+
+    this.signRequest = function(data, timestamp) {
+        var tmpData = JSON.parse(JSON.stringify(data));
+        tmpData['timestamp'] = timestamp;
+
+        var dataKeys = Object.keys(tmpData);
+        dataKeys.sort();
+
+        signData = '';
+        for (var i = 0; i < dataKeys.length; i++) {
+            signData += tmpData[dataKeys[i]];
+        }
+
+        var slice = (signData.length % 2 == 0 ? signData.length / 2 : (signData.length + 1) / 2);
+        var signature = signData.substring(0, slice) + this.apiSignSalt + signData.substring(slice);
+        signature = crypto.createHash('md5').update(signature).digest("hex");
+        signature = new Buffer(signature).toString('base64');
+
+        return signature;
+    }
 }
 
 EasynameApi.prototype.doRequest = function(method, resource, id = null, subResource = null, subId = null, data = null, perform = null, limit = null, offset = null, filter = null) {
@@ -82,21 +117,27 @@ EasynameApi.prototype.doRequest = function(method, resource, id = null, subResou
         }
     };
 
-    console.log('options:', options);
-
     var req = https.request(options, (res) => {
-        console.log('statusCode:', res.statusCode);
-        console.log('headers:', res.headers);
 
+        var body = '';
         res.on('data', (d) => {
-            process.stdout.write(d);
-            console.log('\n\n');
+            body += d;
+        });
+
+        res.on('end', () => {
+            // data reception done, parse json
+            console.log(JSON.parse(body));
         });
     });
 
     req.on('error', (e) => {
         console.error(e);
     });
+
+    // if POST
+    if (method === POST) {
+        req.write(this.createBody(data));
+    }
 
     req.end();
 };
@@ -109,18 +150,10 @@ EasynameApi.prototype.getDomain = function(id) {
 };
 
 EasynameApi.prototype.listDomain = function(limit = null, offset = null, filter = null) {
-    console.log("listDomain");
     return this.doRequest(GET, 'domain', null, null, null, null, null, limit, offset, filter);
 };
 
 EasynameApi.prototype.createDomain = function(domain, registrantContact, adminContact, techContact, zoneContact, nameservers, trustee = false) {
-    var tmpNameservers = [];
-    for (var i = 0; i < 6; i++) {
-        if (nameservers[i]) {
-            tmpNameservers['nameserver' + (i + 1)] = nameservers[i];
-        }
-    }
-
     var data = {
         domain: domain,
         registrantContact: registrantContact,
@@ -130,9 +163,16 @@ EasynameApi.prototype.createDomain = function(domain, registrantContact, adminCo
         trustee: (trustee ? 1 : 0),
         transferIn: 0
     };
-    data.concat(tmpNameservers);
 
-    return this.doRequest(POST, 'domain', null, null, null, data);
+    for (var i = 0; i < 6; i++) {
+        if (nameservers[i]) {
+            data['nameserver' + (i + 1)] = nameservers[i];
+        }
+    }
+
+    this.createBody(data);
+
+    //return this.doRequest(POST, 'domain', null, null, null, data);
 };
 
 EasynameApi.prototype.transferDomain = function(domain, registrantContact, adminContact, techContact, zoneContact, nameservers, trustee = false, transferAuthcode = null) {
