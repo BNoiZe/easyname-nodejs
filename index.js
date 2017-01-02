@@ -170,51 +170,71 @@ EasynameApi.prototype.createDomain = function(domain, registrantContact, adminCo
         }
     }
 
-    this.createBody(data);
-
-    //return this.doRequest(POST, 'domain', null, null, null, data);
+    return this.doRequest(POST, 'domain', null, null, null, data);
 };
 
 EasynameApi.prototype.transferDomain = function(domain, registrantContact, adminContact, techContact, zoneContact, nameservers, trustee = false, transferAuthcode = null) {
-    var tmpNameservers = [];
+    var data = {
+        domain: domain,
+        registrantContact: registrantContact,
+        adminContact: adminContact,
+        techContact: techContact,
+        zoneContact: zoneContact,
+        trustee: (trustee ? 1 : 0)
+    }
+
     for (var i = 0; i < 6; i++) {
         if (nameservers[i]) {
-            tmpNameservers['nameserver' + (i + 1)] = nameservers[i];
+            data['nameserver' + (i + 1)] = nameservers[i];
         }
     }
 
-    var tmpTransferAuthcode = [];
-    if (tmpTransferAuthcode) {
-        //tmpTransferAuthcode[''];
+    if (transferAuthcode) {
+        data['transferAuthcode'] = transferAuthcode;
     }
+
+    return this.doRequest(POST, 'domain', null, null, null, data);
 };
 
 EasynameApi.prototype.deleteDomain = function(id) {
-    return;
+    return this.doRequest(POST, 'domain', id, null, null, null, 'delete');
 };
 
 EasynameApi.prototype.restoreDomain = function(id) {
-    return;
+    return this.doRequest(POST, 'domain', id, null, null, null, 'restore');
 };
 
 EasynameApi.prototype.expireDomain = function(id) {
-    return;
+    return this.doRequest(POST, 'domain', id, null, null, null, 'expire');
 };
 
 EasynameApi.prototype.unexpireDomain = function(id) {
-    return;
+    return this.doRequest(POST, 'domain', id, null, null, null, 'expire');
 };
 
 EasynameApi.prototype.changeOwnerOfDomain = function(id, registrantContact) {
-    return;
+    return this.doRequest(POST, 'domain', id, null, null, {
+        registrantContact: registrantContact
+    }, 'ownerchange');
 };
 
 EasynameApi.prototype.changeContactOfDomain = function(id, adminContact, techContact, zoneContact) {
-    return;
+    return this.doRequest(POST, 'domain', id, null, null, {
+        adminContact: adminContact,
+        techContact: techContact,
+        zoneContact: zoneContact
+    }, 'contactchange');
 };
 
 EasynameApi.prototype.changeNameserverOfDomain = function(id, nameservers) {
-    return;
+    var data = {};
+    for (var i = 0; i < 6; i++) {
+        if (nameservers[i]) {
+            data['nameserver' + (i + 1)] = nameservers[i];
+        }
+    }
+
+    return this.doRequest(POST, 'domain', id, null, null, data, 'nameserverchange');
 };
 
 /**
@@ -229,15 +249,50 @@ EasynameApi.prototype.listContact = function(limit = null, offset = null, filter
 };
 
 EasynameApi.prototype.createContact = function(type, alias, name, address, zip, city, country, phone, email, additionalData) {
-    return;
+    var data = {
+        type: type,
+        alias: alias,
+        name: name,
+        address: address,
+        zip: zip,
+        city: city,
+        country: country,
+        phone: phone,
+        email: email
+    };
+
+    for (var p in additionalData) {
+        if (additionalData.hasOwnProperty(p)) {
+            data['p'] = additionalData[p];
+        }
+    }
+
+    return this.doRequest(POST, 'contact', null, null, null, data);
 };
 
 EasynameApi.prototype.updateContact = function(id, alias, address, zip, city, phone, email, additionalData) {
-    return
+    var data = {
+        alias: alias,
+        name: name,
+        address: address,
+        zip: zip,
+        city: city,
+        country: country,
+        phone: phone,
+        email: email
+    };
+
+    for (var p in additionalData) {
+        if (additionalData.hasOwnProperty(p)) {
+            data['p'] = additionalData[p];
+        }
+    };
+
+    return this.doRequest(POST, 'contact', id, null, null, data);
 };
 
 EasynameApi.prototype.deleteContact = function(id) {
-    return;
+    return this.doRequest(DELETE, 'contact', id);
 };
 
 /**
