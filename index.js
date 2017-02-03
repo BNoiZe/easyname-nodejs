@@ -117,6 +117,8 @@ EasynameApi.prototype.doRequest = function(method, resource, id = null, subResou
         }
     };
 
+
+
     var req = https.request(options, (res) => {
 
         var body = '';
@@ -126,7 +128,8 @@ EasynameApi.prototype.doRequest = function(method, resource, id = null, subResou
 
         res.on('end', () => {
             // data reception done, parse json
-            console.log(JSON.parse(body));
+            //console.log(body);
+            //console.log(JSON.parse(body));
         });
     });
 
@@ -136,7 +139,8 @@ EasynameApi.prototype.doRequest = function(method, resource, id = null, subResou
 
     // if POST
     if (method === POST) {
-        req.write(this.createBody(data));
+        console.log(this.createBody(data));
+        //req.write(this.createBody(data));
     }
 
     req.end();
@@ -235,6 +239,20 @@ EasynameApi.prototype.changeNameserverOfDomain = function(id, nameservers) {
     }
 
     return this.doRequest(POST, 'domain', id, null, null, data, 'nameserverchange');
+};
+
+EasynameApi.prototype.generateAuthcodeOfDomain = function(id) {
+    return this.doRequest(POST, 'domain', id, 'generateauthcode');
+};
+
+EasynameApi.prototype.changeTransfersecurityOfDomain = function(id, transferAllowed = false) {
+    return this.doRequest(POST, 'domain', id, 'transfersecurity', null, {
+        transferAllowed: (transferAllowed ? 1 : 0)
+    });
+};
+
+EasynameApi.prototype.autorenewDomain = function(id) {
+    return;
 };
 
 /**
